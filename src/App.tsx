@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Bot, Link as LinkIcon, FileText, ArrowRight, Activity, Shield, Code2, Copy, Check } from 'lucide-react';
+import { Highlight, themes } from 'prism-react-renderer';
 
 export default function App() {
   const [url, setUrl] = useState('');
@@ -11,7 +12,7 @@ export default function App() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!url || !useCase) return;
-    
+
     setLoading(true);
     // Simulate AI extraction and generation process
     setTimeout(() => {
@@ -106,7 +107,7 @@ export default function App() {
         <div className="w-full max-w-5xl animate-slide-up space-y-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="!mb-0 text-2xl">Integration Strategy</h2>
-            <button 
+            <button
               onClick={() => {
                 setResults(null);
                 setUrl('');
@@ -129,7 +130,7 @@ export default function App() {
                   {results.endpoints.map((ep: any, idx: number) => (
                     <div key={idx} className="flex flex-col gap-1 p-3 rounded bg-[var(--bg-input)] border border-[rgba(255,255,255,0.05)]">
                       <div className="flex items-center gap-2">
-                        <span className={\`text-xs font-bold px-2 py-1 rounded \${ep.method === 'GET' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}\`}>
+                        <span className={`text-xs font-bold px-2 py-1 rounded ${ep.method === 'GET' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
                           {ep.method}
                         </span>
                         <code className="text-sm font-mono text-gray-300">{ep.path}</code>
@@ -163,16 +164,26 @@ export default function App() {
                     {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} className="text-gray-400" />}
                   </button>
                 </div>
-                
+
                 <div className="mb-4 text-sm text-gray-400">
-                  <span className="font-semibold text-gray-300">Recommended Path: </span> 
+                  <span className="font-semibold text-gray-300">Recommended Path: </span>
                   {results.sdk}
                 </div>
 
-                <div className="relative flex-1 bg-[#0d0e12] rounded-lg border border-[rgba(255,255,255,0.05)] p-4 overflow-x-auto">
-                  <pre className="text-sm font-mono text-gray-300 leading-relaxed">
-                    <code>{results.code}</code>
-                  </pre>
+                <div className="relative flex-1 bg-[#0d0e12] rounded-lg border border-[rgba(255,255,255,0.05)] p-4 overflow-x-auto text-sm font-mono leading-relaxed">
+                  <Highlight theme={themes.vsDark} code={results.code} language="typescript">
+                    {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                      <pre className={className} style={{ ...style, backgroundColor: 'transparent' }}>
+                        {tokens.map((line, i) => (
+                          <div key={i} {...getLineProps({ line })}>
+                            {line.map((token, key) => (
+                              <span key={key} {...getTokenProps({ token })} />
+                            ))}
+                          </div>
+                        ))}
+                      </pre>
+                    )}
+                  </Highlight>
                 </div>
               </div>
             </div>
