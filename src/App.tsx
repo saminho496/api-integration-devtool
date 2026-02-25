@@ -8,6 +8,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<'typescript' | 'python' | 'go'>('typescript');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,16 +23,28 @@ export default function App() {
           { method: 'POST', path: '/api/v1/workspaces/{id}/sync', desc: 'Synchronizes external data with the current workspace' }
         ],
         auth: 'Bearer Token (Header: Authorization: Bearer <token>)',
-        sdk: 'TypeScript/Node.js SDK (@acme/api-client)',
-        code: `import { AcmeClient } from '@acme/api-client';\n\n// Initialize the client with your secret key\nconst client = new AcmeClient({\n  apiKey: process.env.ACME_API_KEY,\n});\n\n/**\n * Wrapper to sync data into a workspace\n */\nexport async function syncWorkspaceData(workspaceId: string, payload: any) {\n  try {\n    console.log(\`Syncing data for workspace \${workspaceId}...\`);\n    const response = await client.workspaces.sync(workspaceId, payload);\n    return response.data;\n  } catch (error) {\n    console.error('Failed to sync data:', error);\n    throw error;\n  }\n}`
+        snippets: {
+          typescript: {
+            sdk: 'TypeScript/Node.js SDK (@acme/api-client)',
+            code: `import { AcmeClient } from '@acme/api-client';\n\n// Initialize the client with your secret key\nconst client = new AcmeClient({\n  apiKey: process.env.ACME_API_KEY,\n});\n\n/**\n * Wrapper to sync data into a workspace\n */\nexport async function syncWorkspaceData(workspaceId: string, payload: any) {\n  try {\n    console.log(\`Syncing data for workspace \${workspaceId}...\`);\n    const response = await client.workspaces.sync(workspaceId, payload);\n    return response.data;\n  } catch (error) {\n    console.error('Failed to sync data:', error);\n    throw error;\n  }\n}`
+          },
+          python: {
+            sdk: 'Python SDK (acme-api-client)',
+            code: `import os\nfrom acme_client import AcmeClient\n\n# Initialize the client with your secret key\nclient = AcmeClient(api_key=os.environ.get("ACME_API_KEY"))\n\ndef sync_workspace_data(workspace_id: str, payload: dict):\n    """Wrapper to sync data into a workspace"""\n    try:\n        print(f"Syncing data for workspace {workspace_id}...")\n        response = client.workspaces.sync(workspace_id, payload)\n        return response.data\n    except Exception as e:\n        print(f"Failed to sync data: {e}")\n        raise e`
+          },
+          go: {
+            sdk: 'Go SDK (github.com/acme/api-client-go)',
+            code: `package main\n\nimport (\n\t"fmt"\n\t"os"\n\t"github.com/acme/api-client-go"\n)\n\n// Initialize the client\nvar client = acme.NewClient(os.Getenv("ACME_API_KEY"))\n\n// SyncWorkspaceData wrapper to sync data into a workspace\nfunc SyncWorkspaceData(workspaceID string, payload interface{}) (interface{}, error) {\n\tfmt.Printf("Syncing data for workspace %s...\\n", workspaceID)\n\tdat, err := client.Workspaces.Sync(workspaceID, payload)\n\tif err != nil {\n\t\tfmt.Printf("Failed to sync data: %v\\n", err)\n\t\treturn nil, err\n\t}\n\treturn dat, nil\n}`
+          }
+        }
       });
       setLoading(false);
     }, 2500);
   };
 
   const handleCopy = () => {
-    if (results?.code) {
-      navigator.clipboard.writeText(results.code);
+    if (results?.snippets?.[selectedLanguage]?.code) {
+      navigator.clipboard.writeText(results.snippets[selectedLanguage].code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -160,18 +173,29 @@ export default function App() {
                     <Code2 size={20} className="text-accent-primary" />
                     Generated Wrapper
                   </h3>
-                  <button onClick={handleCopy} className="p-2 hover:bg-white/10 rounded transition-colors" title="Copy code">
-                    {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} className="text-gray-400" />}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <select
+                      className="bg-[var(--bg-input)] border border-[rgba(255,255,255,0.1)] text-sm rounded px-2 py-1 text-gray-300 focus:outline-none focus:border-accent-primary"
+                      value={selectedLanguage}
+                      onChange={(e) => setSelectedLanguage(e.target.value as any)}
+                    >
+                      <option value="typescript">TypeScript</option>
+                      <option value="python">Python</option>
+                      <option value="go">Go</option>
+                    </select>
+                    <button onClick={handleCopy} className="p-2 hover:bg-white/10 rounded transition-colors" title="Copy code">
+                      {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} className="text-gray-400" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mb-4 text-sm text-gray-400">
                   <span className="font-semibold text-gray-300">Recommended Path: </span>
-                  {results.sdk}
+                  {results.snippets[selectedLanguage].sdk}
                 </div>
 
                 <div className="relative flex-1 bg-[#0d0e12] rounded-lg border border-[rgba(255,255,255,0.05)] p-4 overflow-x-auto text-sm font-mono leading-relaxed">
-                  <Highlight theme={themes.vsDark} code={results.code} language="typescript">
+                  <Highlight theme={themes.vsDark} code={results.snippets[selectedLanguage].code} language={selectedLanguage === 'go' ? 'go' : selectedLanguage === 'python' ? 'python' : 'typescript'}>
                     {({ className, style, tokens, getLineProps, getTokenProps }) => (
                       <pre className={className} style={{ ...style, backgroundColor: 'transparent' }}>
                         {tokens.map((line, i) => (
