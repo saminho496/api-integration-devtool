@@ -1,73 +1,48 @@
-# React + TypeScript + Vite
+# Smart DevTool for API Integration
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A beautifully designed, automated developer tool to streamline the process of API integration. Provide an API Documentation URL and your intended use case, and the tool will automatically extract the key endpoints, determine authentication methods, suggest integration paths, and generate a ready-to-use SDK wrapper class.
 
-Currently, two official plugins are available:
+This project was built as part of a Hackathon challenge to showcase a premium, standard UI and advanced tool functionality.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+- **Automated Endpoint Extraction**: Rapidly extracts important endpoints relevant to your use case.
+- **Authentication Discovery**: Determines the correct authorization headers or tokens required.
+- **SDK & Path Suggestions**: Recommends the smartest approach (e.g., existing SDKs or REST).
+- **Code Wrapper Generation**: Auto-generates boilerplate wrapper classes in your preferred language to interact with the API seamlessly.
+- **Premium UI**: Built with React, Tailwind-like vanilla CSS, and sleek modern aesthetics, including micro-animations and "glassmorphism" effects.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Solution Approach
 
-## Expanding the ESLint configuration
+The goal was to demonstrate how an AI-powered agent could automate standard integration drudgery. Rather than just returning plain text, the solution is wrapped in a highly polished user interface with loading states simulating the agent's extraction and code-generation process. Under the hood, the application is built as a Single Page Application (SPA) using React and Vite, structured cleanly to easily wire up to a real LLM-backed backend in the future.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Setup and Usage Instructions
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v16.x or newer)
+- npm or yarn
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Installation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1. Clone the repository:
+   ```bash
+   git clone <your-repository-url>
+   cd api-integration-devtool
+   ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Install the dependencies:
+   ```bash
+   npm install
+   ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+4. Open your browser and navigate to `http://localhost:5173`. Provide an API URL and a use case to see the extraction process in action!
+
+## Tech Stack
+- **Framework**: Vite + React + TypeScript
+- **Styling**: Vanilla CSS (CSS Variables, Flexbox, CSS Grid)
+- **Icons**: Lucide React
