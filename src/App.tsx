@@ -61,7 +61,7 @@ export default function App() {
     setLoading(true);
     setResults(null);
     try {
-      const result = await generateApiIntegration(apiKey, url, useCase);
+      const result = await generateApiIntegration(url, useCase);
       setResults(result);
 
       const newSearch = { url, useCase, date: new Date().toLocaleDateString() };
@@ -78,8 +78,8 @@ export default function App() {
   };
 
   const handleCopy = () => {
-    if (results?.snippets?.[selectedLanguage]?.code) {
-      navigator.clipboard.writeText(results.snippets[selectedLanguage].code);
+    if (results?.wrapperCode?.[selectedLanguage]) {
+      navigator.clipboard.writeText(results.wrapperCode[selectedLanguage]);
       setCopied(true);
       showToast('Code copied to clipboard', 'success');
       setTimeout(() => setCopied(false), 2000);
@@ -87,14 +87,14 @@ export default function App() {
   };
 
   const handleDownload = () => {
-    if (!results?.snippets?.[selectedLanguage]?.code) return;
+    if (!results?.wrapperCode?.[selectedLanguage]) return;
 
     let extension = 'ts';
     if (selectedLanguage === 'python') extension = 'py';
     if (selectedLanguage === 'go') extension = 'go';
 
     const element = document.createElement("a");
-    const file = new Blob([results.snippets[selectedLanguage].code], { type: 'text/plain' });
+    const file = new Blob([results.wrapperCode[selectedLanguage]], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
     element.download = `api_wrapper.${extension}`;
     document.body.appendChild(element);
@@ -261,7 +261,7 @@ export default function App() {
                         </span>
                         <code className="text-xs font-mono text-gray-300 break-all">{ep.path}</code>
                       </div>
-                      <p className="text-xs text-gray-400 leading-relaxed">{ep.desc}</p>
+                      <p className="text-xs text-gray-400 leading-relaxed">{ep.description}</p>
                     </div>
                   ))}
                 </div>
@@ -272,9 +272,9 @@ export default function App() {
                   <Shield size={18} className="text-accent-primary" />
                   Auth Method
                 </h3>
-                <div className="p-3 rounded-lg bg-[var(--bg-input)] border border-[rgba(255,255,255,0.03)]">
-                  <code className="text-xs font-mono text-emerald-400 break-words">{results.auth}</code>
-                </div>
+                <code className="text-xs font-mono text-emerald-400 break-words">
+                  {results.auth?.type} {results.auth?.header ? `(Header: ${results.auth.header})` : ''}
+                </code>
               </div>
             </div>
 
@@ -309,12 +309,12 @@ export default function App() {
                 </div>
 
                 <div className="p-4 text-xs text-gray-400 bg-[var(--bg-card)] border-b border-[rgba(255,255,255,0.05)]">
-                  <span className="font-semibold text-gray-300 mr-2">SDK Path:</span>
-                  <code className="bg-[#0f1115] px-2 py-0.5 rounded text-emerald-400">{results.snippets[selectedLanguage]?.sdk}</code>
+                  <span className="font-semibold text-gray-300 mr-2">{results.integrationPath === 'SDK' ? 'Recommended SDK:' : 'Integration Path:'}</span>
+                  <code className="bg-[#0f1115] px-2 py-0.5 rounded text-emerald-400">{results.recommendedSdk || results.integrationPath}</code>
                 </div>
 
                 <div className="relative flex-1 bg-[#0d0e12] overflow-x-auto p-4 text-sm font-mono leading-relaxed custom-scrollbar">
-                  <Highlight theme={themes.vsDark} code={results.snippets[selectedLanguage]?.code || ''} language={selectedLanguage === 'go' ? 'go' : selectedLanguage === 'python' ? 'python' : 'typescript'}>
+                  <Highlight theme={themes.vsDark} code={results.wrapperCode?.[selectedLanguage] || ''} language={selectedLanguage === 'go' ? 'go' : selectedLanguage === 'python' ? 'python' : 'typescript'}>
                     {({ className, style, tokens, getLineProps, getTokenProps }) => (
                       <pre className={className} style={{ ...style, backgroundColor: 'transparent', margin: 0 }}>
                         {tokens.map((line, i) => (

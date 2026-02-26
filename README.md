@@ -1,48 +1,69 @@
 # Smart DevTool for API Integration
 
-A beautifully designed, automated developer tool to streamline the process of API integration. Provide an API Documentation URL and your intended use case, and the tool will automatically extract the key endpoints, determine authentication methods, suggest integration paths, and generate a ready-to-use SDK wrapper class.
+A beautifully designed, full-stack automated developer tool to streamline the process of API integration. Provide an API Documentation URL and your intended use case, and the tool will programmatically extract key endpoints, parse OpenAPI/Swagger specs, determine authentication methods, suggest integration paths (REST vs SDK), and statically generate a ready-to-use Wrapper class.
 
-This project was built as part of a Hackathon challenge to showcase a premium, standard UI and advanced tool functionality.
+This project was built to showcase a premium UI combined with rigorous, deterministic backend parsing.
 
-## Features
+## 🚀 Core Architecture
 
-- **Automated Endpoint Extraction**: Rapidly extracts important endpoints relevant to your use case.
-- **Authentication Discovery**: Determines the correct authorization headers or tokens required.
-- **SDK & Path Suggestions**: Recommends the smartest approach (e.g., existing SDKs or REST).
-- **Code Wrapper Generation**: Auto-generates boilerplate wrapper classes in your preferred language to interact with the API seamlessly.
-- **Premium UI**: Built with React, Tailwind-like vanilla CSS, and sleek modern aesthetics, including micro-animations and "glassmorphism" effects.
+The architecture has been split into a React/Vite Frontend and a Node.js/Express Backend to ensure real, deterministic parsing rather than relying entirely on LLM hallucination.
 
-## Solution Approach
+### Backend Engine (Node.js & Express)
+- **Real Documentation Fetching**: Uses `axios` to fetch raw HTML or JSON/YAML specs directly from the provided URL.
+- **OpenAPI / Swagger Parser**: Utilizes `@apidevtools/swagger-parser` to deterministically extract endpoints, parameters, and methods from valid OpenAPI 3.x or Swagger 2.0 specs.
+- **HTML Fallback Scraper**: If no valid JSON spec is found, it falls back to parsing the raw HTML using `cheerio` and sophisticated Regex logic to intelligently guess the endpoint paths!
+- **Authentication Detection**: Reads the `securitySchemes` to extract API Keys, Bearer Tokens, Basic Auth, or OAuth2 requirements automatically.
+- **SDK Detection Engine**: Makes live calls to the NPM Registry and PyPI API to detect if an official SDK package currently exists for the requested API.
+- **Intelligent Use-Case Matching**: Filters the massive list of extracted endpoints down to the top 5 most relevant based on keyword matching against the User's "Intended Use Case".
+- **Template Code Generation**: Bypasses AI completely to statically generate highly accurate TypeScript, Python, and Go wrapper classes strictly based on the parsed data.
 
-The goal was to demonstrate how an AI-powered agent could automate standard integration drudgery. Rather than just returning plain text, the solution is wrapped in a highly polished user interface with loading states simulating the agent's extraction and code-generation process. Under the hood, the application is built as a Single Page Application (SPA) using React and Vite, structured cleanly to easily wire up to a real LLM-backed backend in the future.
+### Frontend Client (React & Vite)
+- **Premium UI**: Dark mode glassmorphism interfaces built purely with Tailwind CSS (v4).
+- **Dynamic Loading States**: Shimmering skeleton loaders with progressive loading steps based on backend progress.
+- **Developer UX**: 1-click clipboard Copy and 1-click direct File Downloads (`.ts`, `.py`, `.go`) of the generated code.
+- **Local History**: Persists successful integrations into `localStorage` for instant retrieval as "Recent Searches".
 
-## Setup and Usage Instructions
+## 🛠️ Setup and Usage Instructions
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (v16.x or newer)
+- [Node.js](https://nodejs.org/) (v18.x or newer)
 - npm or yarn
 
 ### Installation
 
-1. Clone the repository:
+1. Clone the repository and move to directory:
    ```bash
    git clone <your-repository-url>
    cd api-integration-devtool
    ```
 
-2. Install the dependencies:
+2. Install all frontend and backend dependencies:
    ```bash
    npm install
    ```
 
-3. Run the development server:
+3. **Start the Backend Server** (Port 3001):
+   Open a terminal and run:
+   ```bash
+   npm run server
+   ```
+
+4. **Start the Frontend Client** (Port 5173):
+   Open a *second* terminal and run:
    ```bash
    npm run dev
    ```
 
-4. Open your browser and navigate to `http://localhost:5173`. Provide an API URL and a use case to see the extraction process in action!
+5. Open your browser and navigate to `http://localhost:5173`!
 
-## Tech Stack
-- **Framework**: Vite + React + TypeScript
-- **Styling**: Vanilla CSS (CSS Variables, Flexbox, CSS Grid)
+## 🧪 Testing Examples to Try
+To verify the complex OpenAPI parser works deterministically, try the following test input:
+- **URL**: `https://petstore.swagger.io/v2/swagger.json`
+- **Use Case**: `I want to add a new pet to the store and then find pets by their status.`
+
+## 📦 Tech Stack
+- **Frontend**: Vite + React 19 + TypeScript + Tailwind CSS v4
+- **Backend**: Node.js + Express + `tsx`
+- **Parsing**: `swagger-parser`, `cheerio`, `axios`
+- **Syntax Highlighting**: Prism React Renderer
 - **Icons**: Lucide React
