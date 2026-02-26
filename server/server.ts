@@ -5,10 +5,30 @@ import { detectSdk } from './sdkDetector.js';
 import { generateWrappers } from './wrapperGenerator.js';
 import { matchEndpointsToUseCase } from './useCaseMatcher.js';
 import { detectAuth } from './authDetector.js';
+import { enhanceWithLlm } from './llmEnhancer.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.post('/enhance', async (req, res) => {
+    try {
+        const { apiKey, endpoints, auth, integrationPath, wrapperCode, useCase } = req.body;
+
+        if (!apiKey) {
+            return res.status(400).json({ error: 'Gemini API Key is required for AI Insights' });
+        }
+
+        const enhancedData = await enhanceWithLlm({
+            apiKey, endpoints, auth, integrationPath, wrapperCode, useCase
+        });
+
+        res.json(enhancedData);
+    } catch (error: any) {
+        console.error('Enhance error:', error);
+        res.status(500).json({ error: error.message || 'Failed to enhance with LLM' });
+    }
+});
 
 app.post('/analyze', async (req, res) => {
     try {

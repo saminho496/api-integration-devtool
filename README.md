@@ -1,6 +1,6 @@
 # Smart DevTool for API Integration
 
-A beautifully designed, full-stack automated developer tool to streamline the process of API integration. Provide an API Documentation URL and your intended use case, and the tool will programmatically extract key endpoints, parse OpenAPI/Swagger specs, determine authentication methods, suggest integration paths (REST vs SDK), and statically generate a ready-to-use Wrapper class.
+A beautifully designed, full-stack automated developer tool to streamline the process of API integration. Provide an API Documentation URL and your intended use case, and the tool will programmatically extract key endpoints, parse OpenAPI/Swagger specs, determine authentication methods, suggest integration paths (REST vs SDK), and statically generate a ready-to-use Wrapper class. An optional Generative AI layer sits on top to enhance the deterministic results with ranked workflow instructions and deeply commented code.
 
 This project was built to showcase a premium UI combined with rigorous, deterministic backend parsing.
 
@@ -17,8 +17,16 @@ The architecture has been split into a React/Vite Frontend and a Node.js/Express
 - **Intelligent Use-Case Matching**: Filters the massive list of extracted endpoints down to the top 5 most relevant based on keyword matching against the User's "Intended Use Case".
 - **Template Code Generation**: Bypasses AI completely to statically generate highly accurate TypeScript, Python, and Go wrapper classes strictly based on the parsed data.
 
+### ✨ LLM Enhancement Layer (Google Gemini)
+Built entirely decoupled from the base deterministic extraction, this service accepts a Gemini API Key to run optional AI insights:
+- **Intelligent Endpoint Ranking**: Semantically ranks the top extracted endpoints strictly by relevance for the user's specific use case.
+- **Workflow Generator**: Acts as a solution architect, providing a step-by-step logic sequence of exactly how to stitch the API calls together to solve the target objective.
+- **Developer Integration Guide**: Outputs an executive summary and readable explanation of how the authentication mechanism works and which path to choose.
+- **Code Enhancement Generator**: Accepts the pre-validated wrapper code and injects rich, comprehensive docstrings, inline comments, and mock usage examples without breaking the core structure!
+
 ### Frontend Client (React & Vite)
 - **Premium UI**: Dark mode glassmorphism interfaces built purely with Tailwind CSS (v4).
+- **Interactive AI Insights**: A smooth toggle slider dynamically transforms the raw Wrapper Code into deeply 'Enhanced' commented code when enabled.
 - **Dynamic Loading States**: Shimmering skeleton loaders with progressive loading steps based on backend progress.
 - **Developer UX**: 1-click clipboard Copy and 1-click direct File Downloads (`.ts`, `.py`, `.go`) of the generated code.
 - **Local History**: Persists successful integrations into `localStorage` for instant retrieval as "Recent Searches".

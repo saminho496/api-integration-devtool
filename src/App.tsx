@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Link as LinkIcon, FileText, ArrowRight, Activity, Shield, Code2, Copy, Check, Download, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Bot, Link as LinkIcon, FileText, ArrowRight, Activity, Shield, Code2, Copy, Check, Download, Clock, AlertCircle, CheckCircle2, Sparkles, ListChecks, Map } from 'lucide-react';
 import { Highlight, themes } from 'prism-react-renderer';
-import { generateApiIntegration } from './services/aiService';
+import { generateApiIntegration, enhanceIntegration } from './services/aiService';
 
 interface SearchHistory {
   url: string;
@@ -28,6 +28,10 @@ export default function App() {
   const [selectedLanguage, setSelectedLanguage] = useState<'typescript' | 'python' | 'go'>('typescript');
   const [recentSearches, setRecentSearches] = useState<SearchHistory[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
+
+  const [enhancing, setEnhancing] = useState(false);
+  const [enhancedResults, setEnhancedResults] = useState<any>(null);
+  const [showEnhancedCode, setShowEnhancedCode] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('api-devtool-recent');
@@ -60,6 +64,8 @@ export default function App() {
 
     setLoading(true);
     setResults(null);
+    setEnhancedResults(null);
+    setShowEnhancedCode(false);
     try {
       const result = await generateApiIntegration(url, useCase);
       setResults(result);
@@ -77,9 +83,36 @@ export default function App() {
     }
   };
 
+  const handleEnhance = async () => {
+    if (!apiKey || !results) {
+      showToast('Need Gemini API Key to run insights', 'error');
+      return;
+    }
+    setEnhancing(true);
+    try {
+      const payload = {
+        endpoints: results.endpoints,
+        auth: results.auth,
+        integrationPath: results.integrationPath,
+        wrapperCode: results.wrapperCode,
+        useCase
+      };
+      const response = await enhanceIntegration(apiKey, payload);
+      setEnhancedResults(response);
+      setShowEnhancedCode(true); // default to enhanced code once loaded
+      showToast('AI Insights generated!', 'success');
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || 'Error generating insights');
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
   const handleCopy = () => {
-    if (results?.wrapperCode?.[selectedLanguage]) {
-      navigator.clipboard.writeText(results.wrapperCode[selectedLanguage]);
+    const codeToCopy = showEnhancedCode && enhancedResults ? enhancedResults.enhancedWrapperCode[selectedLanguage] : results?.wrapperCode?.[selectedLanguage];
+    if (codeToCopy) {
+      navigator.clipboard.writeText(codeToCopy);
       setCopied(true);
       showToast('Code copied to clipboard', 'success');
       setTimeout(() => setCopied(false), 2000);
@@ -87,14 +120,15 @@ export default function App() {
   };
 
   const handleDownload = () => {
-    if (!results?.wrapperCode?.[selectedLanguage]) return;
+    const codeToDownload = showEnhancedCode && enhancedResults ? enhancedResults.enhancedWrapperCode[selectedLanguage] : results?.wrapperCode?.[selectedLanguage];
+    if (!codeToDownload) return;
 
     let extension = 'ts';
     if (selectedLanguage === 'python') extension = 'py';
     if (selectedLanguage === 'go') extension = 'go';
 
     const element = document.createElement("a");
-    const file = new Blob([results.wrapperCode[selectedLanguage]], { type: 'text/plain' });
+    const file = new Blob([codeToDownload], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
     element.download = `api_wrapper.${extension}`;
     document.body.appendChild(element);
@@ -234,14 +268,28 @@ export default function App() {
         <div className="w-full max-w-5xl animate-slide-up space-y-6 pb-12">
           <div className="flex justify-between items-center mb-6">
             <h2 className="!mb-0 text-2xl font-bold">Integration Strategy</h2>
-            <button
-              onClick={() => {
-                setResults(null);
-                setLoadingStep(0);
-              }}
-              className="btn text-sm px-4 py-2 hover:bg-white/5" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-              Start Over
-            </button>
+            <div className="flex items-center gap-3">
+              {!enhancedResults && (
+                <button
+                  onClick={handleEnhance}
+                  disabled={enhancing}
+                  className="btn text-sm px-4 py-2 flex items-center gap-2 bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 border border-purple-500/30"
+                >
+                  {enhancing ? <Bot className="animate-spin" size={16} /> : <Sparkles size={16} />}
+                  {enhancing ? 'Generating Insights...' : 'Enhance strictly with AI'}
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setResults(null);
+                  setLoadingStep(0);
+                  setEnhancedResults(null);
+                  setShowEnhancedCode(false);
+                }}
+                className="btn text-sm px-4 py-2 hover:bg-white/5" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+                Start Over
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
@@ -253,9 +301,10 @@ export default function App() {
                   Key Endpoints
                 </h3>
                 <div className="flex flex-col gap-3">
-                  {results.endpoints?.map((ep: any, idx: number) => (
-                    <div key={idx} className="flex flex-col gap-2 p-3 rounded-lg bg-[var(--bg-input)] border border-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.1)] transition-colors">
-                      <div className="flex items-center gap-2">
+                  {(enhancedResults?.rankedEndpoints || results.endpoints)?.map((ep: any, idx: number) => (
+                    <div key={idx} className="flex flex-col gap-2 p-3 rounded-lg bg-[var(--bg-input)] border border-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.1)] transition-colors relative">
+                      {enhancedResults && <div className="absolute top-2 right-2 text-[10px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded">Rank #{idx + 1}</div>}
+                      <div className="flex items-center gap-2 pr-12">
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${ep.method === 'GET' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
                           {ep.method}
                         </span>
@@ -278,8 +327,41 @@ export default function App() {
               </div>
             </div>
 
-            {/* SDK & Code Generation (Main Content) */}
+            {/* AI Insights & Code Generation (Main Content) */}
             <div className="flex flex-col gap-6 lg:col-span-8">
+
+              {enhancedResults && (
+                <div className="card w-full mb-2 animate-slide-up bg-purple-900/10 border-purple-500/20">
+                  <h3 className="flex items-center gap-2 border-b border-purple-500/10 pb-3 mb-4 text-sm uppercase tracking-wider text-purple-300">
+                    <Sparkles size={18} />
+                    AI Insights & Integration Guide
+                  </h3>
+
+                  <div className="mb-6">
+                    <h4 className="flex items-center gap-2 text-sm text-gray-300 mb-2 font-medium">
+                      <Map size={16} className="text-purple-400" /> Executive Summary
+                    </h4>
+                    <p className="text-sm text-gray-400 leading-relaxed bg-[var(--bg-input)] p-3 rounded border border-purple-500/5">
+                      {enhancedResults.explanation}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="flex items-center gap-2 text-sm text-gray-300 mb-3 font-medium">
+                      <ListChecks size={16} className="text-purple-400" /> Recommended Workflow
+                    </h4>
+                    <div className="space-y-2">
+                      {enhancedResults.workflowSteps.map((step: string, i: number) => (
+                        <div key={i} className="flex gap-3 items-start bg-[var(--bg-input)] p-3 rounded border border-[rgba(255,255,255,0.03)]">
+                          <div className="bg-purple-500/20 text-purple-300 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">{i + 1}</div>
+                          <p className="text-sm text-gray-400 leading-relaxed">{step}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="card w-full h-full flex flex-col p-0 overflow-hidden">
                 <div className="flex justify-between items-center border-b border-[rgba(255,255,255,0.08)] p-4 bg-[var(--bg-card-hover)]">
                   <h3 className="flex items-center gap-2 !mb-0 text-sm uppercase tracking-wider text-gray-300">
@@ -287,6 +369,15 @@ export default function App() {
                     Wrapper Code
                   </h3>
                   <div className="flex items-center gap-2">
+                    {enhancedResults && (
+                      <label className="flex items-center gap-2 mr-3 cursor-pointer text-xs group">
+                        <div className={`w-8 h-4 rounded-full relative transition-colors \${showEnhancedCode ? 'bg-purple-600' : 'bg-gray-700'}`}>
+                          <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform \${showEnhancedCode ? 'translate-x-4' : ''}`}></div>
+                        </div>
+                        <span className={showEnhancedCode ? 'text-purple-300 font-medium' : 'text-gray-500 group-hover:text-gray-300'}>Use Enhanced</span>
+                      </label>
+                    )}
+
                     <select
                       className="bg-[#0f1115] border border-[rgba(255,255,255,0.1)] text-xs rounded px-3 py-1.5 text-gray-300 focus:outline-none focus:border-accent-primary cursor-pointer transition-colors hover:border-[rgba(255,255,255,0.2)]"
                       value={selectedLanguage}
@@ -313,8 +404,8 @@ export default function App() {
                   <code className="bg-[#0f1115] px-2 py-0.5 rounded text-emerald-400">{results.recommendedSdk || results.integrationPath}</code>
                 </div>
 
-                <div className="relative flex-1 bg-[#0d0e12] overflow-x-auto p-4 text-sm font-mono leading-relaxed custom-scrollbar">
-                  <Highlight theme={themes.vsDark} code={results.wrapperCode?.[selectedLanguage] || ''} language={selectedLanguage === 'go' ? 'go' : selectedLanguage === 'python' ? 'python' : 'typescript'}>
+                <div className="relative flex-1 bg-[#0d0e12] overflow-x-auto p-4 text-sm font-mono leading-relaxed custom-scrollbar min-h-[300px]">
+                  <Highlight theme={themes.vsDark} code={showEnhancedCode && enhancedResults ? (enhancedResults.enhancedWrapperCode?.[selectedLanguage] || '') : (results.wrapperCode?.[selectedLanguage] || '')} language={selectedLanguage === 'go' ? 'go' : selectedLanguage === 'python' ? 'python' : 'typescript'}>
                     {({ className, style, tokens, getLineProps, getTokenProps }) => (
                       <pre className={className} style={{ ...style, backgroundColor: 'transparent', margin: 0 }}>
                         {tokens.map((line, i) => (
