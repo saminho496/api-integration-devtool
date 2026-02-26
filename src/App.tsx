@@ -1,45 +1,31 @@
 import React, { useState } from 'react';
 import { Bot, Link as LinkIcon, FileText, ArrowRight, Activity, Shield, Code2, Copy, Check } from 'lucide-react';
 import { Highlight, themes } from 'prism-react-renderer';
+import { generateApiIntegration } from './services/aiService';
 
 export default function App() {
   const [url, setUrl] = useState('');
   const [useCase, setUseCase] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<'typescript' | 'python' | 'go'>('typescript');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!url || !useCase) return;
+    if (!url || !useCase || !apiKey) return;
 
     setLoading(true);
-    // Simulate AI extraction and generation process
-    setTimeout(() => {
-      setResults({
-        endpoints: [
-          { method: 'GET', path: '/api/v1/auth/session', desc: 'Validates current session token' },
-          { method: 'POST', path: '/api/v1/workspaces/{id}/sync', desc: 'Synchronizes external data with the current workspace' }
-        ],
-        auth: 'Bearer Token (Header: Authorization: Bearer <token>)',
-        snippets: {
-          typescript: {
-            sdk: 'TypeScript/Node.js SDK (@acme/api-client)',
-            code: `import { AcmeClient } from '@acme/api-client';\n\n// Initialize the client with your secret key\nconst client = new AcmeClient({\n  apiKey: process.env.ACME_API_KEY,\n});\n\n/**\n * Wrapper to sync data into a workspace\n */\nexport async function syncWorkspaceData(workspaceId: string, payload: any) {\n  try {\n    console.log(\`Syncing data for workspace \${workspaceId}...\`);\n    const response = await client.workspaces.sync(workspaceId, payload);\n    return response.data;\n  } catch (error) {\n    console.error('Failed to sync data:', error);\n    throw error;\n  }\n}`
-          },
-          python: {
-            sdk: 'Python SDK (acme-api-client)',
-            code: `import os\nfrom acme_client import AcmeClient\n\n# Initialize the client with your secret key\nclient = AcmeClient(api_key=os.environ.get("ACME_API_KEY"))\n\ndef sync_workspace_data(workspace_id: str, payload: dict):\n    """Wrapper to sync data into a workspace"""\n    try:\n        print(f"Syncing data for workspace {workspace_id}...")\n        response = client.workspaces.sync(workspace_id, payload)\n        return response.data\n    except Exception as e:\n        print(f"Failed to sync data: {e}")\n        raise e`
-          },
-          go: {
-            sdk: 'Go SDK (github.com/acme/api-client-go)',
-            code: `package main\n\nimport (\n\t"fmt"\n\t"os"\n\t"github.com/acme/api-client-go"\n)\n\n// Initialize the client\nvar client = acme.NewClient(os.Getenv("ACME_API_KEY"))\n\n// SyncWorkspaceData wrapper to sync data into a workspace\nfunc SyncWorkspaceData(workspaceID string, payload interface{}) (interface{}, error) {\n\tfmt.Printf("Syncing data for workspace %s...\\n", workspaceID)\n\tdat, err := client.Workspaces.Sync(workspaceID, payload)\n\tif err != nil {\n\t\tfmt.Printf("Failed to sync data: %v\\n", err)\n\t\treturn nil, err\n\t}\n\treturn dat, nil\n}`
-          }
-        }
-      });
+    try {
+      const result = await generateApiIntegration(apiKey, url, useCase);
+      setResults(result);
+    } catch (error: any) {
+      console.error(error);
+      alert('Failed to generate integration: ' + error.message);
+    } finally {
       setLoading(false);
-    }, 2500);
+    }
   };
 
   const handleCopy = () => {
@@ -65,6 +51,22 @@ export default function App() {
           <div className="glass-panel">
             <form onSubmit={handleSubmit} className="flex flex-col">
               <div className="input-group">
+                <label htmlFor="apiKey" className="input-label flex gap-2 items-center">
+                  <Shield size={16} className="text-accent-primary" />
+                  Gemini API Key
+                </label>
+                <input
+                  id="apiKey"
+                  type="password"
+                  className="input"
+                  placeholder="AIzaSy..."
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="input-group mt-2">
                 <label htmlFor="url" className="input-label flex gap-2 items-center">
                   <LinkIcon size={16} className="text-accent-primary" />
                   API Documentation URL
@@ -125,6 +127,7 @@ export default function App() {
                 setResults(null);
                 setUrl('');
                 setUseCase('');
+                setApiKey('');
               }}
               className="btn" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
               Start Over
